@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scape"
+version = "0.1.0"
+description = "Spatial Causal Analysis with Paired Embeddings (SCAPE)"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=1.5",
+    "scikit-learn>=1.2",
+    "torch>=2.0",
+    "harmonypy>=0.0.9",
+    "umap-learn>=0.5",
+    "igraph>=0.10",
+    "leidenalg>=0.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["SCAPE*"]

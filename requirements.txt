@@ -1,0 +1,9 @@
+numpy>=1.24
+scipy>=1.10
+pandas>=1.5
+scikit-learn>=1.2
+torch>=2.0
+harmonypy>=0.0.9
+umap-learn>=0.5
+igraph>=0.10
+leidenalg>=0.10

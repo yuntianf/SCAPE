@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg-link
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Benchmark scripts and results (local only)
+tests/benchmark*.py
+tests/benchmark*.log
+tests/phase1*.csv
+tests/phase2*.csv
+
+# Logs and temp files
+*.log
+nohup.out
+
+# Environment
+.env
+.venv/

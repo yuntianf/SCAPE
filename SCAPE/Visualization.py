@@ -44,166 +44,295 @@ def scatter(
     point_size=4,
     highlight_size=14,
     palette="publication",
-    cmap="viridis",          # NEW
-    continuous=False,        # NEW (force mode if needed)
-    width="double",
-    height=5.2,
+    cmap="viridis",
+    continuous=False,
+    width=180,
+    height=180,
+    ax=None,           # pass an existing Axes to embed in a subplot grid
+    rasterized=None,   # None = auto (rasterize if n_points > raster_thresh)
+    raster_thresh=50000,
+    show_legend=True,  # set False when combining panels (legend drawn by combine_scatters)
+    show_ticks=True,   # set False to hide axis ticks and tick labels
+    show_labels=True,  # set False to hide axis labels ("Dim 1" / "Dim 2")
+    title=None,        # optional figure title
+    xlab_label = "Dim1",
+    ylab_label = "Dim2"
 ):
-    
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib as mpl
+    from matplotlib.lines import Line2D
 
-    # ---------------------------
-    # Figure setup (Nature style)
-    # ---------------------------
-    
+    # ── publication style (Nature column widths) ──────────────────────────────
     mm_to_in = 1 / 25.4
-    widths = {"single": 89 * mm_to_in, "double": 183 * mm_to_in}
+    # widths = {"single": 89 * mm_to_in, "double": 183 * mm_to_in}
 
     mpl.rcParams.update({
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
-        "font.size": 7,
-        "axes.labelsize": 7,
-        "xtick.labelsize": 6,
-        "ytick.labelsize": 6,
-        "legend.fontsize": 6,
-        "axes.linewidth": 0.6,
-        "xtick.major.width": 0.6,
-        "ytick.major.width": 0.6,
-        "xtick.major.size": 2.5,
-        "ytick.major.size": 2.5,
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-        "savefig.bbox": "tight",
-        "savefig.pad_inches": 0.02,
+        "font.family":          "sans-serif",
+        "font.sans-serif":      ["Arial", "Helvetica", "DejaVu Sans"],
+        "font.size":            12,
+        "axes.labelsize":       14,
+        "axes.titlesize":       22,
+        "axes.titleweight":     "bold",
+        "xtick.labelsize":      18,
+        "ytick.labelsize":      18,
+        "legend.fontsize":      12,
+        "legend.title_fontsize": 16,
+        "axes.linewidth":       0.6,
+        "xtick.major.width":    0.6,
+        "ytick.major.width":    0.6,
+        "xtick.major.size":     2.5,
+        "ytick.major.size":     2.5,
+        "pdf.fonttype":         42,   # editable text in Illustrator
+        "ps.fonttype":          42,
+        "savefig.bbox":         "tight",
+        "savefig.pad_inches":   0.02,
     })
 
-    fig, ax = plt.subplots(figsize=(widths[width], height))
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(width * mm_to_in, height * mm_to_in))
+        own_fig = True
+    else:
+        fig = ax.figure
+        own_fig = False
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_linewidth(0.6)
+    ax.spines["bottom"].set_linewidth(0.6)
+    ax.tick_params(length=2.5, width=0.6)
+    if not show_ticks:
+        ax.set_xticks([])
+        ax.set_yticks([])
 
-    # ---------------------------
-    # Default group
-    # ---------------------------
-
+    # ── group setup ───────────────────────────────────────────────────────────
     if group is None:
         group = np.zeros(coords.shape[0])
-
     group = np.asarray(group)
 
-    # Auto-detect continuous if not specified
+    # auto-detect continuous: must be float AND have many unique values
     if not continuous:
-        continuous = np.issubdtype(group.dtype, np.floating)
-
-    # ---------------------------
-    # Continuous color mode
-    # ---------------------------
-
-    if continuous:
-
-        sc = ax.scatter(
-            coords[:, 0],
-            coords[:, 1],
-            c=group,
-            cmap=cmap,
-            s=point_size,
-            alpha=0.85
+        continuous = (
+            np.issubdtype(group.dtype, np.floating)
+            and len(np.unique(group)) > 10
         )
 
-        # Colorbar
-        cbar = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
-        cbar.set_label(group_title)
+    # auto-detect rasterization based on point count
+    if rasterized is None:
+        rasterized = coords.shape[0] > raster_thresh
 
-    # ---------------------------
-    # Discrete color mode (original)
-    # ---------------------------
+    # ── Paul Tol colorblind-safe bright palette ───────────────────────────────
+    PUBLICATION_COLORS = [
+        "#4477AA",  # blue
+        "#EE6677",  # red
+        "#228833",  # green
+        "#CCBB44",  # yellow
+        "#66CCEE",  # cyan
+        "#AA3377",  # purple
+        "#BBBBBB",  # grey
+        "#EE8866",  # orange
+        "#44BB99",  # teal
+        "#FFAABB",  # pink
+    ]
 
+    legend_handles = []
+
+    # ── continuous mode ───────────────────────────────────────────────────────
+    if continuous:
+        sc = ax.scatter(
+            coords[:, 0], coords[:, 1],
+            c=group, cmap=cmap,
+            s=point_size, alpha=0.8,
+            linewidths=0, rasterized=rasterized, zorder=2,
+        )
+        if show_legend:
+            cbar = fig.colorbar(sc, ax=ax, fraction=0.04, pad=0.02,
+                                shrink=0.8, aspect=20)
+            cbar.set_label(group_title)
+            cbar.ax.tick_params(width=0.5, length=2)
+            cbar.outline.set_linewidth(0.5)
+
+    # ── discrete mode ─────────────────────────────────────────────────────────
     else:
-
-        if palette == "publication":
-            colors = [
-                "#4C72B0", "#DD8452", "#55A868", "#C44E52",
-                "#8172B3", "#937860", "#DA8BC3", "#8C8C8C",
-                "#CCB974", "#64B5CD"
-            ]
-        else:
-            colors = plt.cm.tab10.colors
-
+        colors = PUBLICATION_COLORS if palette == "publication" \
+                 else list(plt.cm.tab10.colors)
         unique_groups = np.unique(group)
 
         for i, g in enumerate(unique_groups):
-
-            mask = group == g
-
-            label = None
-            if group_labels is not None:
-                label = group_labels[i]
-            else:
-                label = f"{g}"
+            mask  = group == g
+            label = group_labels[i] if group_labels is not None else str(g)
+            color = colors[i % len(colors)]
 
             ax.scatter(
-                coords[mask, 0],
-                coords[mask, 1],
-                s=point_size,
-                color=colors[i % len(colors)],
-                alpha=0.85,
-                label=label
+                coords[mask, 0], coords[mask, 1],
+                s=point_size, color=color, alpha=0.8,
+                linewidths=0, rasterized=rasterized, zorder=2,
+            )
+            legend_handles.append(
+                Line2D([0], [0], marker="o", color="none",
+                       markerfacecolor=color, markeredgewidth=0,
+                       markersize=4, label=label)
             )
 
-        ax.legend(
+    # ── treatment overlay ─────────────────────────────────────────────────────
+    if treatment is not None:
+        treat_mask = np.asarray(treatment).astype(bool)
+        ax.scatter(
+            coords[treat_mask, 0], coords[treat_mask, 1],
+            s=highlight_size, facecolors="none",
+            edgecolors="#222222", linewidths=0.5,
+            rasterized=rasterized, zorder=3,
+        )
+        legend_handles.append(
+            Line2D([0], [0], marker="o", color="none",
+                   markerfacecolor="none", markeredgecolor="#222222",
+                   markeredgewidth=0.8, markersize=5,
+                   label=treatment_label)
+        )
+
+    # ── store handles on axes for retrieval by combine_scatters ──────────────
+    ax._scape_legend_handles = legend_handles
+    ax._scape_legend_title   = group_title
+
+    # ── legend (discrete + optional treatment) ────────────────────────────────
+    if legend_handles and show_legend:
+        leg = ax.legend(
+            handles=legend_handles,
             title=group_title,
             frameon=False,
-            markerscale=1.5,
             handletextpad=0.3,
-            borderpad=0.2,
-            labelspacing=0.25,
+            borderpad=0.0,
+            labelspacing=0.3,
             loc="center left",
-            bbox_to_anchor=(1, 0.5)
+            bbox_to_anchor=(1.02, 0.5),
         )
+        leg.get_title().set_fontweight("bold")
+        if own_fig:
+            fig.tight_layout()
+            fig.subplots_adjust(right=0.82)
 
-        fig.tight_layout(rect=[0, 0, 0.85, 1])
-
-    # ---------------------------
-    # Highlight treatment
-    # ---------------------------
-
-    if treatment is not None:
-
-        treat_mask = treatment.astype(bool)
-
-        ax.scatter(
-            coords[treat_mask, 0],
-            coords[treat_mask, 1],
-            s=highlight_size,
-            facecolors="none",
-            edgecolors="black",
-            linewidths=0.5,
-            label=treatment_label if not continuous else None
-        )
-
-        if not continuous:
-            ax.legend(
-                title=group_title,
-                frameon=False,
-                markerscale=1.5,
-                handletextpad=0.3,
-                borderpad=0.2,
-                labelspacing=0.25,
-                loc="center left",
-                bbox_to_anchor=(1, 0.5)
-            )
-
-    # ---------------------------
-    # Axes
-    # ---------------------------
-
-    ax.set_xlabel("Dim 1")
-    ax.set_ylabel("Dim 2")
+    if show_labels:
+        ax.set_xlabel(xlab_label)
+        ax.set_ylabel(ylab_label)
+    if title is not None:
+        ax.set_title(title)
 
     return fig, ax
+
+
+def combine_scatters(
+    panels,
+    ncols=None,
+    titles=None,
+    sharex=False,
+    sharey=False,
+    panel_size=(3.0, 3.0),
+    wspace=0.35,
+    hspace=0.4,
+    legend_pos="right",   # "right", "bottom", or None
+    legend_ncol=1,        # columns in legend (useful for "bottom" placement)
+):
+    """
+    Lay out multiple scatter panels in a grid with a single merged legend.
+
+    Parameters
+    ----------
+    panels : list of dict
+        Each dict is kwargs forwarded to scatter() (do not include 'ax' or
+        'show_legend' — those are handled internally).
+    ncols : int, optional
+        Number of columns. Defaults to len(panels) (single row).
+    titles : list of str, optional
+        Per-panel titles.
+    sharex, sharey : bool
+        Share axis limits across panels.
+    panel_size : (float, float)
+        (width, height) in inches per panel.
+    wspace, hspace : float
+        Horizontal / vertical spacing between panels (fraction of panel size).
+    legend_pos : "right" | "bottom" | None
+        Where to place the merged legend.
+    legend_ncol : int
+        Number of columns in the legend (handy when legend_pos="bottom").
+
+    Returns
+    -------
+    fig : matplotlib.Figure
+    axes : list of matplotlib.Axes
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    from matplotlib.lines import Line2D
+
+    n = len(panels)
+    if ncols is None:
+        ncols = n
+    nrows = int(np.ceil(n / ncols))
+
+    fig, axes = plt.subplots(
+        nrows, ncols,
+        figsize=(panel_size[0] * ncols, panel_size[1] * nrows),
+        sharex=sharex, sharey=sharey,
+        squeeze=False,
+    )
+    fig.subplots_adjust(wspace=wspace, hspace=hspace)
+
+    axes_flat = axes.flatten()
+
+    # hide unused panels
+    for j in range(n, len(axes_flat)):
+        axes_flat[j].set_visible(False)
+
+    # draw each panel
+    for i, kwargs in enumerate(panels):
+        scatter(**kwargs, ax=axes_flat[i], show_legend=False)
+        if titles is not None and i < len(titles):
+            axes_flat[i].set_title(titles[i])
+
+    # ── collect and deduplicate legend handles across all panels ───────────────
+    seen_labels  = {}   # label → handle (first occurrence wins)
+    legend_title = ""
+
+    for ax_i in axes_flat[:n]:
+        handles = getattr(ax_i, "_scape_legend_handles", [])
+        title_i = getattr(ax_i, "_scape_legend_title", "")
+        if title_i:
+            legend_title = title_i          # use last non-empty title
+        for h in handles:
+            if h.get_label() not in seen_labels:
+                seen_labels[h.get_label()] = h
+
+    merged_handles = list(seen_labels.values())
+
+    if merged_handles and legend_pos is not None:
+        if legend_pos == "right":
+            leg = fig.legend(
+                handles=merged_handles,
+                title=legend_title,
+                frameon=False,
+                handletextpad=0.3,
+                borderpad=0.0,
+                labelspacing=0.3,
+                loc="center left",
+                bbox_to_anchor=(1.01, 0.5),
+                ncol=legend_ncol,
+            )
+        elif legend_pos == "bottom":
+            leg = fig.legend(
+                handles=merged_handles,
+                title=legend_title,
+                frameon=False,
+                handletextpad=0.3,
+                borderpad=0.0,
+                labelspacing=0.3,
+                loc="upper center",
+                bbox_to_anchor=(0.5, 0.0),
+                ncol=legend_ncol if legend_ncol > 1 else len(merged_handles),
+            )
+        leg.get_title().set_fontweight("bold")
+
+    return fig, list(axes_flat[:n])
     
     
 # -------------------------- umap_from_exprs ---------------------------------- #
@@ -661,8 +790,8 @@ def treatment_umap(y_z, m1, m0, y1, y0, treatment,
         verbose=False,
     )
     U_Y = reducer.fit_transform(y_star_pc)
-    U_f0 = reducer.transform(y1pc_to_treated)
-    U_f1 = reducer.transform(y0pc_to_untreated)
+    U_f1 = reducer.transform(y1pc_to_treated)
+    U_f0 = reducer.transform(y0pc_to_untreated)
 
     # Wrap in DataFrames
     U_Y_df = pd.DataFrame(U_Y, columns=["umap1", "umap2"])

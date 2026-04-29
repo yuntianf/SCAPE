@@ -25,6 +25,11 @@ Naively regressing on **K** conflates U and C. SCAPE uses joint entropic OT to c
 | `OTSample` | Stochastic sampling from OT coupling matrices |
 | `CausalEffect` | IPW, stabilized IPW, and AIPW-OW point estimators |
 | `CausalRegression` | Cross-fitted AIPW with Ridge / logistic nuisance models |
+| `DragonNet` | Multi-output DragonNet with adversarial slide/pre-post heads and cross-fitted AIPW |
+| `NeighborCount` | Slide-aware spatial neighbor-type count and treatment proximity matrices |
+| `NeighborEmbedding` | Pairwise cell-neighborhood distances via graph geodesics (NN-surrogate or exact EMD) |
+| `Preprocess` | Per-gene z-scaling, neighbor-count feature transformation, and slide one-hot encoding |
+| `BuildGraph` | Connected SNN hybrid graph construction for geodesic distance computation |
 | `BatchRemovalHarmony` | Harmony-based batch correction for multi-slide data |
 | `BatchRemovalSymphony` | Symphony-style reference-build + query-map batch correction |
 | `Simulation` | Synthetic data generation with configurable confounding, colliders, and batch effects |

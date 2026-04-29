@@ -1,3 +1,26 @@
+from .DragonNet import (
+    DragonNet,
+    build_dragonnet,
+    crossfit_dragonnet,
+    aipw_test_z,
+)
+from .NeighborCount import (
+    neighbor_type_counts,
+    cell_neighbor_treatment,
+)
+from .NeighborEmbedding import neighbor_distance
+from .Preprocess import (
+    GeneZScaler,
+    NeighborXTransformer,
+    SlideOneHotEncoder,
+)
+from .utils import (
+    GradientReversal,
+    set_seed,
+    col_scale,
+    log1p_standardize,
+    clr_transform_proportions,
+)
 from .BatchRemovalHarmony import (
     harmony,
     center_slide_untreated_mean,
@@ -32,6 +55,7 @@ from .Simulation import (
 from .Visualization import (
     theme_pre,
     scatter,
+    combine_scatters,
     umap_from_exprs,
     delta_smooth,
     delta_match,

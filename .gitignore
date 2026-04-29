@@ -16,6 +16,8 @@ tests/benchmark*.py
 tests/benchmark*.log
 tests/phase1*.csv
 tests/phase2*.csv
+tests/ot_*.csv
+tests/combined_*.csv
 
 # Logs and temp files
 *.log

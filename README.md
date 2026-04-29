@@ -40,7 +40,7 @@ Naively regressing on **K** conflates U and C. SCAPE uses joint entropic OT to c
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/SCAPE.git
+git clone https://github.com/yuntianf/SCAPE.git
 cd SCAPE
 pip install -e .
 ```
